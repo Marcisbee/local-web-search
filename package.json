@@ -1,0 +1,30 @@
+{
+  "name": "local-web-search",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "rolldown -c",
+    "watch": "rolldown --watch -c",
+    "prepublishOnly": "bun run build"
+  },
+  "devDependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "@types/bun": "latest",
+    "@types/turndown": "^5.0.5",
+    "rolldown": "^1.0.0-beta.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "cac": "^6.7.14",
+    "p-limit": "^6.2.0",
+    "p-queue": "^8.1.0",
+    "playwright-core": "^1.50.1",
+    "puppeteer-core": "^24.1.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "turndown": "^7.2.0",
+    "turndown-plugin-gfm": "^1.0.2"
+  }
+}
