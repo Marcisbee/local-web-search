@@ -1,5 +1,5 @@
 import { cac } from "cac"
-import { Browser, launch, type BrowserContext, type Page } from "puppeteer-core"
+import { type Browser, launch, type Page } from "puppeteer-core"
 import { findChrome } from "./find-chrome"
 import Limit from "p-limit"
 import { toMarkdown } from "./to-markdown"
@@ -10,6 +10,32 @@ type SearchResult = {
   content?: string
 }
 
+const launchBrowser = async (options: { show?: boolean }) => {
+  const context = await launch({
+    executablePath: findChrome(),
+    headless: !options.show,
+    args: [
+      // "--enable-webgl",
+      // "--use-gl=swiftshader",
+      // "--enable-accelerated-2d-canvas",
+      "--disable-blink-features=AutomationControlled",
+      "--disable-web-security",
+    ],
+    ignoreDefaultArgs: ["--enable-automation"],
+    defaultViewport: {
+      width: 1280,
+      height: 720,
+    },
+  })
+
+  return {
+    context,
+    [Symbol.asyncDispose]: async () => {
+      await context.close()
+    },
+  }
+}
+
 async function main() {
   const cli = cac()
 
@@ -17,7 +43,6 @@ async function main() {
     .command("search", "run search")
     .option("-k, --keyword <keyword>", "keyword to search")
     .option("-c, --concurrency <concurrency>", "concurrency")
-    .option("--user-data-dir <user-data-dir>", "user data dir")
     .option("--show", "Show browser")
     .option("--max-results <num>", "Max search results")
     .action(
@@ -25,29 +50,14 @@ async function main() {
         keyword?: string
         concurrency?: number
         show?: boolean
-        userDataDir?: string
         maxResults?: number
       }) => {
         if (!options.keyword) {
           throw new Error("missing keyword")
         }
 
-        const context = await launch({
-          executablePath: findChrome(),
-          headless: "shell",
-          args: [
-            // "--enable-webgl",
-            // "--use-gl=swiftshader",
-            // "--enable-accelerated-2d-canvas",
-            "--disable-blink-features=AutomationControlled",
-            "--disable-web-security",
-          ],
-          ignoreDefaultArgs: ["--enable-automation"],
-          defaultViewport: {
-            width: 1280,
-            height: 720,
-          },
-        })
+        await using browser = await launchBrowser({ show: options.show })
+        const { context } = browser
 
         const page = await context.newPage()
 

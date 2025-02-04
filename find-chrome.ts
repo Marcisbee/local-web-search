@@ -15,19 +15,19 @@ const windowsBrowsers: Browser[] = [
     weight: 48,
   },
   {
-    path: "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+    path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     weight: 50,
   },
   {
-    path: "C:\\Program Files (x86)\\Google\\Chrome Canary\\Application\\chrome.exe",
+    path: "C:\\Program Files\\Google\\Chrome Canary\\Application\\chrome.exe",
     weight: 52,
   },
   {
-    path: "C:\\Program Files (x86)\\Chromium\\Application\\chrome.exe",
+    path: "C:\\Program Files\\Chromium\\Application\\chrome.exe",
     weight: 54,
   },
   {
-    path: "C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+    path: "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
     weight: 56,
   },
 ]
@@ -76,7 +76,7 @@ export function findChrome(): string {
 
   if (available.length === 0) {
     throw new Error(
-      "Cannot find a chrome-based browser on your system, please install one of: Chrome, Edge, Brave"
+      "Cannot find a chrome-based browser on your system, please install one of: Chrome, Edge, Brave",
     )
   }
 
