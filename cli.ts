@@ -95,7 +95,10 @@ async function main() {
           links.map((item) => limit(() => visitLink(context, item.url)))
         )
 
-        console.log("-->", JSON.stringify(finalResults))
+        console.log(
+          "-->",
+          JSON.stringify(finalResults.filter((item) => item.content))
+        )
 
         await context.close()
       }
