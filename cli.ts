@@ -98,9 +98,9 @@ async function main() {
         console.log(
           "-->",
           JSON.stringify(
-            finalResults.filter(
-              (item) => item.status === "fulfilled" && item.value.content
-            )
+            finalResults
+              .map((item) => (item.status === "fulfilled" ? item.value : null))
+              .filter((v) => v?.content)
           )
         )
 
