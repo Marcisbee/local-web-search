@@ -1,5 +1,3 @@
-import path from "node:path"
-import { tmpdir } from "node:os"
 import { cac } from "cac"
 import { chromium, type BrowserContext, type Page } from "playwright-core"
 import { findChrome } from "./find-chrome"
@@ -21,20 +19,20 @@ async function main() {
     .option("-c, --concurrency <concurrency>", "concurrency")
     .option("--user-data-dir <user-data-dir>", "user data dir")
     .option("--show", "Show browser")
+    .option("--max-results <num>", "Max search results")
     .action(
       async (options: {
         keyword?: string
         concurrency?: number
         show?: boolean
         userDataDir?: string
+        maxResults?: number
       }) => {
         if (!options.keyword) {
           throw new Error("missing keyword")
         }
 
-        const userDataDir =
-          options.userDataDir ||
-          path.join(tmpdir(), ".local-web-search-user-data")
+        const userDataDir = options.userDataDir || "" // temp dir
         const context = await chromium.launchPersistentContext(userDataDir, {
           executablePath: findChrome(),
           headless: !options.show,
@@ -44,10 +42,14 @@ async function main() {
             // "--enable-accelerated-2d-canvas",
             "--disable-blink-features=AutomationControlled",
             "--disable-web-security",
-            "--lang=en-US",
           ],
           bypassCSP: true,
-          // downloadBehavior: { policy: "allow" },
+          locale: "en-US",
+          viewport: {
+            width: 1280,
+            height: 720,
+          },
+          deviceScaleFactor: 1,
         })
 
         await applyStealthScripts(context)
@@ -55,9 +57,9 @@ async function main() {
         const page = await context.newPage()
 
         await interceptRequest(page)
-        const url = `https://www.google.com/search?newwindow=1&q=${encodeURIComponent(
+        const url = `https://www.google.com/search?q=${encodeURIComponent(
           options.keyword
-        )}`
+        )}&num=${options.maxResults || 10}`
 
         await page.goto(url, {
           waitUntil: "networkidle",
@@ -65,7 +67,7 @@ async function main() {
 
         const links = await page.evaluate(() => {
           const elements = document.querySelectorAll(".g")
-          console.log(elements)
+
           const links: SearchResult[] = []
 
           elements.forEach((element) => {

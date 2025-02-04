@@ -12,6 +12,7 @@ export default defineConfig({
   output: {
     dir: "dist",
     format: "esm",
+    banner: `#!/usr/bin/env bun`,
   },
   define: {
     __READABILITY_SCRIPT__: JSON.stringify(
