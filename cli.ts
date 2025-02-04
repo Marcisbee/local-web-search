@@ -10,6 +10,10 @@ type SearchResult = {
   content?: string
 }
 
+const stripQuotes = (text: string) => {
+  return text.replace(/^"|"$/g, "")
+}
+
 const launchBrowser = async (options: { show?: boolean }) => {
   const context = await launch({
     executablePath: findChrome(),
@@ -63,7 +67,7 @@ async function main() {
 
         await interceptRequest(page)
         const url = `https://www.google.com/search?q=${encodeURIComponent(
-          options.keyword,
+          stripQuotes(options.keyword),
         )}&num=${options.maxResults || 10}`
 
         await page.goto(url, {
