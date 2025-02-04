@@ -144,8 +144,13 @@ async function visitLink(context: Browser, url: string) {
   })
 
   const result = await page.evaluate(() => {
+    const selectorsToRemove = [
+      "script,noscript,style,link,svg,img,video,iframe,canvas",
+      // wikipedia refs
+      ".reflist",
+    ]
     document
-      .querySelectorAll(`script,noscript,style,link,svg,img`)
+      .querySelectorAll(selectorsToRemove.join(","))
       .forEach((el) => el.remove())
 
     const article = new Readability(document).parse()
@@ -157,7 +162,9 @@ async function visitLink(context: Browser, url: string) {
 
   await page.close()
 
-  return { ...result, url, content: toMarkdown(result.content) }
+  const content = toMarkdown(result.content)
+  console.log(content)
+  return { ...result, url, content: content }
 }
 
 async function applyStealthScripts(page: Page) {
