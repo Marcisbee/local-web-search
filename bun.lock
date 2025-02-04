@@ -14,6 +14,7 @@
         "@mozilla/readability": "^0.5.0",
         "@types/bun": "latest",
         "@types/turndown": "^5.0.5",
+        "prettier": "^3.4.2",
         "rolldown": "^1.0.0-beta.3",
       },
       "peerDependencies": {
@@ -79,6 +80,8 @@
     "p-limit": ["p-limit@6.2.0", "", { "dependencies": { "yocto-queue": "^1.1.1" } }, "sha512-kuUqqHNUqoIWp/c467RI4X6mmyuojY5jGutNU0wVTmEOOfcuwLqyMVoAi9MKi2Ak+5i9+nhmrK4ufZE8069kHA=="],
 
     "playwright-core": ["playwright-core@1.50.1", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-ra9fsNWayuYumt+NiM069M6OkcRb1FZSK8bgi66AtpFoWkg2+y0bJSNmkFrWhMbEBbVKC/EruAHH3g0zmtwGmQ=="],
+
+    "prettier": ["prettier@3.4.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ=="],
 
     "rolldown": ["rolldown@1.0.0-beta.3", "", { "dependencies": { "@oxc-project/types": "0.46.0", "@valibot/to-json-schema": "1.0.0-beta.4", "valibot": "1.0.0-beta.12" }, "optionalDependencies": { "@rolldown/binding-darwin-arm64": "1.0.0-beta.3", "@rolldown/binding-darwin-x64": "1.0.0-beta.3", "@rolldown/binding-freebsd-x64": "1.0.0-beta.3", "@rolldown/binding-linux-arm-gnueabihf": "1.0.0-beta.3", "@rolldown/binding-linux-arm64-gnu": "1.0.0-beta.3", "@rolldown/binding-linux-arm64-musl": "1.0.0-beta.3", "@rolldown/binding-linux-x64-gnu": "1.0.0-beta.3", "@rolldown/binding-linux-x64-musl": "1.0.0-beta.3", "@rolldown/binding-wasm32-wasi": "1.0.0-beta.3", "@rolldown/binding-win32-arm64-msvc": "1.0.0-beta.3", "@rolldown/binding-win32-ia32-msvc": "1.0.0-beta.3", "@rolldown/binding-win32-x64-msvc": "1.0.0-beta.3" }, "peerDependencies": { "@babel/runtime": ">=7" }, "optionalPeers": ["@babel/runtime"], "bin": { "rolldown": "bin/cli.js" } }, "sha512-DBpF1K8tSwU/0dQ7zL9BYcje0/GjO5lgfdEW0rHHFfGjGDh8TBVNlokfEXtdt/IoJOiTdtySfsrgarLJkZmZTQ=="],
 

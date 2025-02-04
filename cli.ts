@@ -32,28 +32,30 @@ async function main() {
           throw new Error("missing keyword")
         }
 
-        const userDataDir = options.userDataDir || "" // temp dir
-        const context = await chromium.launchPersistentContext(userDataDir, {
-          executablePath: findChrome(),
-          headless: !options.show,
-          args: [
-            // "--enable-webgl",
-            // "--use-gl=swiftshader",
-            // "--enable-accelerated-2d-canvas",
-            "--disable-blink-features=AutomationControlled",
-            "--disable-web-security",
-          ],
-          bypassCSP: true,
-          locale: "en-US",
-          viewport: {
-            width: 1280,
-            height: 720,
+        await using context = await chromium.launchPersistentContext(
+          options.userDataDir || "",
+          {
+            executablePath: findChrome(),
+            headless: !options.show,
+            args: [
+              // "--enable-webgl",
+              // "--use-gl=swiftshader",
+              // "--enable-accelerated-2d-canvas",
+              "--disable-blink-features=AutomationControlled",
+              "--disable-web-security",
+            ],
+            bypassCSP: true,
+            locale: "en-US",
+            viewport: {
+              width: 1280,
+              height: 720,
+            },
+            deviceScaleFactor: 1,
+            // acceptDownloads: true,
+            userAgent:
+              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
           },
-          deviceScaleFactor: 1,
-          acceptDownloads: true,
-          userAgent:
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
-        })
+        )
 
         await applyStealthScripts(context)
 
@@ -61,7 +63,7 @@ async function main() {
 
         await interceptRequest(page)
         const url = `https://www.google.com/search?q=${encodeURIComponent(
-          options.keyword
+          options.keyword,
         )}&num=${options.maxResults || 10}`
 
         await page.goto(url, {
@@ -95,7 +97,7 @@ async function main() {
         const limit = Limit(options.concurrency || 20)
 
         const finalResults = await Promise.allSettled(
-          links.map((item) => limit(() => visitLink(context, item.url)))
+          links.map((item) => limit(() => visitLink(context, item.url))),
         )
 
         console.log(
@@ -103,12 +105,10 @@ async function main() {
           JSON.stringify(
             finalResults
               .map((item) => (item.status === "fulfilled" ? item.value : null))
-              .filter((v) => v?.content)
-          )
+              .filter((v) => v?.content),
+          ),
         )
-
-        await context.close()
-      }
+      },
     )
 
   cli.help()

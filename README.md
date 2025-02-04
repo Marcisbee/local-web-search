@@ -1,15 +1,17 @@
 # local-web-search
 
-To install dependencies:
+This is designed to be used in [ChatWise](https://chatwise.app)'s local web search feature.
+
+## Development
 
 ```bash
-bun install
+# tab 1
+bun run watch
+
+# tab 2
+bun ./dist/cli.js search -k "some keyword"
 ```
 
-To run:
+## License
 
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.0. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+MIT
