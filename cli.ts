@@ -1,5 +1,5 @@
 import { cac } from "cac"
-import { chromium, type BrowserContext, type Page } from "playwright-core"
+import { Browser, launch, type BrowserContext, type Page } from "puppeteer-core"
 import { findChrome } from "./find-chrome"
 import Limit from "p-limit"
 import { toMarkdown } from "./to-markdown"
@@ -32,32 +32,22 @@ async function main() {
           throw new Error("missing keyword")
         }
 
-        await using context = await chromium.launchPersistentContext(
-          options.userDataDir || "",
-          {
-            executablePath: findChrome(),
-            headless: !options.show,
-            args: [
-              // "--enable-webgl",
-              // "--use-gl=swiftshader",
-              // "--enable-accelerated-2d-canvas",
-              "--disable-blink-features=AutomationControlled",
-              "--disable-web-security",
-            ],
-            bypassCSP: true,
-            locale: "en-US",
-            viewport: {
-              width: 1280,
-              height: 720,
-            },
-            deviceScaleFactor: 1,
-            // acceptDownloads: true,
-            userAgent:
-              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        const context = await launch({
+          executablePath: findChrome(),
+          headless: "shell",
+          args: [
+            // "--enable-webgl",
+            // "--use-gl=swiftshader",
+            // "--enable-accelerated-2d-canvas",
+            "--disable-blink-features=AutomationControlled",
+            "--disable-web-security",
+          ],
+          ignoreDefaultArgs: ["--enable-automation"],
+          defaultViewport: {
+            width: 1280,
+            height: 720,
           },
-        )
-
-        await applyStealthScripts(context)
+        })
 
         const page = await context.newPage()
 
@@ -67,7 +57,7 @@ async function main() {
         )}&num=${options.maxResults || 10}`
 
         await page.goto(url, {
-          waitUntil: "networkidle",
+          waitUntil: "networkidle2",
         })
 
         const links = await page.evaluate(() => {
@@ -118,24 +108,25 @@ async function main() {
 main()
 
 async function interceptRequest(page: Page) {
-  await page.route("**/*", (route) => {
-    const request = route.request()
+  await applyStealthScripts(page)
+  await page.setRequestInterception(true)
 
+  page.on("request", (request) => {
     if (request.isNavigationRequest()) {
-      return route.continue()
+      return request.continue()
     }
 
-    return route.abort()
+    return request.abort()
   })
 }
 
-async function visitLink(context: BrowserContext, url: string) {
+async function visitLink(context: Browser, url: string) {
   const page = await context.newPage()
 
   await interceptRequest(page)
 
   await page.goto(url, {
-    waitUntil: "networkidle",
+    waitUntil: "networkidle2",
   })
 
   await page.addScriptTag({
@@ -159,8 +150,12 @@ async function visitLink(context: BrowserContext, url: string) {
   return { ...result, url, content: toMarkdown(result.content) }
 }
 
-async function applyStealthScripts(context: BrowserContext) {
-  await context.addInitScript(() => {
+async function applyStealthScripts(page: Page) {
+  await page.setBypassCSP(true)
+  await page.setUserAgent(
+    `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36`,
+  )
+  await page.evaluate(() => {
     // Override the navigator.webdriver property
     Object.defineProperty(navigator, "webdriver", {
       get: () => undefined,
@@ -174,14 +169,6 @@ async function applyStealthScripts(context: BrowserContext) {
     Object.defineProperty(navigator, "plugins", {
       get: () => [1, 2, 3, 4, 5],
     })
-
-    // Remove Playwright-specific properties
-    // @ts-expect-error
-    delete window.__playwright
-    // @ts-expect-error
-    delete window.__pw_manual
-    // @ts-expect-error
-    delete window.__PW_inspect
 
     // Redefine the headless property
     Object.defineProperty(navigator, "headless", {

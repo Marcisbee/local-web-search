@@ -24,7 +24,7 @@
   "dependencies": {
     "cac": "^6.7.14",
     "p-limit": "^6.2.0",
-    "playwright-core": "^1.50.1",
+    "puppeteer-core": "^24.1.1",
     "turndown": "^7.2.0",
     "turndown-plugin-gfm": "^1.0.2"
   },
