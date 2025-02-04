@@ -16,9 +16,7 @@
     "@types/bun": "latest",
     "@types/turndown": "^5.0.5",
     "prettier": "^3.4.2",
-    "rolldown": "^1.0.0-beta.3"
-  },
-  "peerDependencies": {
+    "rolldown": "^1.0.0-beta.3",
     "typescript": "^5.0.0"
   },
   "dependencies": {
