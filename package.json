@@ -7,7 +7,7 @@
   ],
   "bin": "./dist/cli.js",
   "scripts": {
-    "build": "rolldown -c",
+    "build": "rm -rf dist && rolldown -c",
     "watch": "rolldown --watch -c",
     "prepublishOnly": "bun run build"
   },
@@ -17,14 +17,14 @@
     "@types/turndown": "^5.0.5",
     "prettier": "^3.4.2",
     "rolldown": "^1.0.0-beta.3",
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
+    "typescript": "^5.0.0",
     "cac": "^6.7.14",
     "p-limit": "^6.2.0",
-    "puppeteer-core": "^24.1.1",
     "turndown": "^7.2.0",
     "turndown-plugin-gfm": "^1.0.2"
+  },
+  "dependencies": {
+    "puppeteer-core": "24.1.1"
   },
   "license": "MIT"
 }

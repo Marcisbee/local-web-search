@@ -4,7 +4,7 @@ import pkg from "./package.json"
 
 const readabilityScript = fs.readFileSync(
   "node_modules/@mozilla/readability/Readability.js",
-  "utf-8"
+  "utf-8",
 )
 
 export default defineConfig({
@@ -12,11 +12,17 @@ export default defineConfig({
   output: {
     dir: "dist",
     format: "esm",
-    banner: `#!/usr/bin/env bun`,
+    banner: (chunk) => {
+      if (chunk.isEntry) {
+        return `#!/usr/bin/env bun`
+      }
+      return ""
+    },
   },
+  platform: "node",
   define: {
     __READABILITY_SCRIPT__: JSON.stringify(
-      `var Readability=(function(module){${readabilityScript}\nreturn module.exports})({})`
+      `var Readability=(function(module){${readabilityScript}\nreturn module.exports})({})`,
     ),
   },
   external: Object.keys(pkg.dependencies || {}),
