@@ -91,13 +91,17 @@ async function main() {
 
         const limit = Limit(options.concurrency || 20)
 
-        const finalResults = await Promise.all(
+        const finalResults = await Promise.allSettled(
           links.map((item) => limit(() => visitLink(context, item.url)))
         )
 
         console.log(
           "-->",
-          JSON.stringify(finalResults.filter((item) => item.content))
+          JSON.stringify(
+            finalResults.filter(
+              (item) => item.status === "fulfilled" && item.value.content
+            )
+          )
         )
 
         await context.close()
