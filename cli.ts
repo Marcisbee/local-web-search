@@ -81,12 +81,15 @@ async function main() {
 
         const queue = new Queue({ concurrency: options.concurrency || 15 })
 
+        const visitedUrls = new Set<string>()
+
         await Promise.all(
           queries.map((query) =>
             search(context, {
               query,
               maxResults,
               queue,
+              visitedUrls,
             }),
           ),
         )
@@ -115,7 +118,12 @@ main()
 
 async function search(
   context: Browser,
-  options: { query: string; maxResults?: number; queue: Queue },
+  options: {
+    query: string
+    maxResults?: number
+    queue: Queue
+    visitedUrls: Set<string>
+  },
 ) {
   const page = await context.newPage()
 
@@ -128,29 +136,35 @@ async function search(
     waitUntil: "networkidle2",
   })
 
-  const links = await page
-    .evaluate(() => {
-      const elements = document.querySelectorAll(".g")
+  let links = await page.evaluate(() => {
+    const elements = document.querySelectorAll(".g")
 
-      const links: SearchResult[] = []
+    const links: SearchResult[] = []
 
-      elements.forEach((element) => {
-        const titleEl = element.querySelector("h3")
-        const urlEl = element.querySelector("a")
+    elements.forEach((element) => {
+      const titleEl = element.querySelector("h3")
+      const urlEl = element.querySelector("a")
 
-        const item: SearchResult = {
-          title: titleEl?.textContent || "",
-          url: urlEl?.getAttribute("href") || "",
-        }
+      const item: SearchResult = {
+        title: titleEl?.textContent || "",
+        url: urlEl?.getAttribute("href") || "",
+      }
 
-        if (!item.title || !item.url) return
+      if (!item.title || !item.url) return
 
-        links.push(item)
-      })
-
-      return links
+      links.push(item)
     })
-    .then((links) => links.filter((link) => !shouldSkipDomain(link.url)))
+
+    return links
+  })
+
+  links = links.filter((link) => {
+    if (options.visitedUrls.has(link.url)) return false
+
+    options.visitedUrls.add(link.url)
+
+    return !shouldSkipDomain(link.url)
+  })
 
   console.log(
     "-->",
