@@ -1,7 +1,7 @@
 import { cac } from "cac"
 import { type Browser, launch, type Page } from "puppeteer-core"
 import { findChrome } from "./find-chrome"
-import Limit from "p-limit"
+import Queue from "p-queue"
 import { toMarkdown } from "./to-markdown"
 import { WebSearchError } from "./error"
 
@@ -78,12 +78,14 @@ async function main() {
         })
         const { context } = browser
 
+        const queue = new Queue({ concurrency: options.concurrency || 15 })
+
         await Promise.all(
           queries.map((query) =>
             search(context, {
               query,
-              concurrency: options.concurrency,
               maxResults,
+              queue,
             }),
           ),
         )
@@ -112,7 +114,7 @@ main()
 
 async function search(
   context: Browser,
-  options: { query: string; concurrency?: number; maxResults?: number },
+  options: { query: string; maxResults?: number; queue: Queue },
 ) {
   const page = await context.newPage()
 
@@ -152,10 +154,8 @@ async function search(
     results: JSON.stringify(links),
   })
 
-  const limit = Limit(options.concurrency || 20)
-
   const finalResults = await Promise.allSettled(
-    links.map((item) => limit(() => visitLink(context, item.url))),
+    links.map((item) => options.queue.add(() => visitLink(context, item.url))),
   )
 
   console.log(
