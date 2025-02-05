@@ -4,6 +4,7 @@ import { findChrome } from "./find-chrome"
 import Queue from "p-queue"
 import { toMarkdown } from "./to-markdown"
 import { WebSearchError } from "./error"
+import { shouldSkipDomain } from "./utils"
 
 type SearchResult = {
   title: string
@@ -127,27 +128,29 @@ async function search(
     waitUntil: "networkidle2",
   })
 
-  const links = await page.evaluate(() => {
-    const elements = document.querySelectorAll(".g")
+  const links = await page
+    .evaluate(() => {
+      const elements = document.querySelectorAll(".g")
 
-    const links: SearchResult[] = []
+      const links: SearchResult[] = []
 
-    elements.forEach((element) => {
-      const titleEl = element.querySelector("h3")
-      const urlEl = element.querySelector("a")
+      elements.forEach((element) => {
+        const titleEl = element.querySelector("h3")
+        const urlEl = element.querySelector("a")
 
-      const item: SearchResult = {
-        title: titleEl?.textContent || "",
-        url: urlEl?.getAttribute("href") || "",
-      }
+        const item: SearchResult = {
+          title: titleEl?.textContent || "",
+          url: urlEl?.getAttribute("href") || "",
+        }
 
-      if (!item.title || !item.url) return
+        if (!item.title || !item.url) return
 
-      links.push(item)
+        links.push(item)
+      })
+
+      return links
     })
-
-    return links
-  })
+    .then((links) => links.filter((link) => !shouldSkipDomain(link.url)))
 
   console.log(
     "-->",
