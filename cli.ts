@@ -63,22 +63,27 @@ async function main() {
           throw new Error("missing query")
         }
 
+        const queries = Array.isArray(options.query)
+          ? options.query
+          : [options.query]
+
+        // limit the max results for each query, minimal 3
+        const maxResults =
+          options.maxResults &&
+          Math.max(3, Math.floor(options.maxResults / queries.length))
+
         await using browser = await launchBrowser({
           show: options.show,
           browser: options.browser,
         })
         const { context } = browser
 
-        const queries = Array.isArray(options.query)
-          ? options.query
-          : [options.query]
-
         await Promise.all(
           queries.map((query) =>
             search(context, {
               query,
               concurrency: options.concurrency,
-              maxResults: options.maxResults,
+              maxResults,
             }),
           ),
         )
