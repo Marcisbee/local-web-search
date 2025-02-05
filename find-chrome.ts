@@ -1,87 +1,67 @@
 import fs from "node:fs"
+import { BrowserNotFoundError } from "./error"
 
 interface Browser {
-  path: string
-  weight: number
+  name: string
+  win32: string
+  darwin: string
 }
 
-const windowsBrowsers: Browser[] = [
+const browsers: Browser[] = [
   {
-    path: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-    weight: 46,
+    name: "Brave",
+    win32:
+      "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+    darwin: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
   },
   {
-    path: "C:\\Program Files (x86)\\Microsoft\\Edge Canary\\Application\\msedge.exe",
-    weight: 48,
+    name: "Chromium",
+    win32: "C:\\Program Files\\Chromium\\Application\\chrome.exe",
+    darwin: "/Applications/Chromium.app/Contents/MacOS/Chromium",
   },
   {
-    path: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    weight: 50,
+    name: "Google Chrome Canary",
+    win32: "C:\\Program Files\\Google\\Chrome Canary\\Application\\chrome.exe",
+    darwin:
+      "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
   },
   {
-    path: "C:\\Program Files\\Google\\Chrome Canary\\Application\\chrome.exe",
-    weight: 52,
+    name: "Google Chrome",
+    win32: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    darwin: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   },
   {
-    path: "C:\\Program Files\\Chromium\\Application\\chrome.exe",
-    weight: 54,
+    name: "Microsoft Edge Canary",
+    win32:
+      "C:\\Program Files (x86)\\Microsoft\\Edge Canary\\Application\\msedge.exe",
+    darwin:
+      "/Applications/Microsoft Edge Canary.app/Contents/MacOS/Microsoft Edge Canary",
   },
   {
-    path: "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
-    weight: 56,
-  },
-]
-
-const macBrowsers: Browser[] = [
-  {
-    path: "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-    weight: 46,
-  },
-  {
-    path: "/Applications/Microsoft Edge Canary.app/Contents/MacOS/Microsoft Edge Canary",
-    weight: 48,
-  },
-  {
-    path: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    weight: 50,
-  },
-  {
-    path: "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
-    weight: 52,
-  },
-  {
-    path: "/Applications/Chromium.app/Contents/MacOS/Chromium",
-    weight: 54,
-  },
-  {
-    path: "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-    weight: 56,
+    name: "Microsoft Edge",
+    win32: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+    darwin: "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
   },
 ]
 
-export function findChrome(): string {
-  let browsers: Browser[]
+export function findChrome(name?: string): string {
+  const browser = name
+    ? browsers.find((b) => b.name === name)
+    : browsers.find((browser) =>
+        fs.existsSync(
+          browser[process.platform === "darwin" ? "darwin" : "win32"],
+        ),
+      )
 
-  // Check the operating system using Node's process.platform
-  if (process.platform === "win32") {
-    browsers = windowsBrowsers
-  } else if (process.platform === "darwin") {
-    browsers = macBrowsers
-  } else {
-    throw new Error(`Unsupported operating system: ${process.platform}`)
-  }
+  if (!browser) {
+    if (name) {
+      throw new BrowserNotFoundError(`Cannot find browser: ${name}`)
+    }
 
-  // Filter the browsers that exist on the file system
-  const available = browsers.filter((b) => fs.existsSync(b.path))
-
-  if (available.length === 0) {
-    throw new Error(
+    throw new BrowserNotFoundError(
       "Cannot find a chrome-based browser on your system, please install one of: Chrome, Edge, Brave",
     )
   }
 
-  // Sort browsers descending by weight
-  available.sort((a, b) => b.weight - a.weight)
-
-  return available[0].path
+  return process.platform === "darwin" ? browser.darwin : browser.win32
 }

@@ -3,6 +3,7 @@ import { type Browser, launch, type Page } from "puppeteer-core"
 import { findChrome } from "./find-chrome"
 import Limit from "p-limit"
 import { toMarkdown } from "./to-markdown"
+import { WebSearchError } from "./error"
 
 type SearchResult = {
   title: string
@@ -14,9 +15,9 @@ const stripQuotes = (text: string) => {
   return text.replace(/^"|"$/g, "")
 }
 
-const launchBrowser = async (options: { show?: boolean }) => {
+const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
   const context = await launch({
-    executablePath: findChrome(),
+    executablePath: findChrome(options.browser),
     headless: !options.show,
     args: [
       // "--enable-webgl",
@@ -49,18 +50,23 @@ async function main() {
     .option("-c, --concurrency <concurrency>", "concurrency")
     .option("--show", "Show browser")
     .option("--max-results <num>", "Max search results")
+    .option("--browser <browser>", "Choose a browser to use")
     .action(
       async (options: {
         keyword?: string | string[]
         concurrency?: number
         show?: boolean
         maxResults?: number
+        browser?: string
       }) => {
         if (!options.keyword) {
           throw new Error("missing keyword")
         }
 
-        await using browser = await launchBrowser({ show: options.show })
+        await using browser = await launchBrowser({
+          show: options.show,
+          browser: options.browser,
+        })
         const { context } = browser
 
         const keywords = Array.isArray(options.keyword)
@@ -80,7 +86,19 @@ async function main() {
     )
 
   cli.help()
-  cli.parse()
+
+  try {
+    cli.parse(process.argv, { run: false })
+    await cli.runMatchedCommand()
+  } catch (error) {
+    process.exitCode = 1
+
+    if (error instanceof WebSearchError) {
+      console.error(error.message)
+    } else {
+      console.error(error)
+    }
+  }
 }
 
 main()
