@@ -149,10 +149,13 @@ async function search(
     return links
   })
 
-  console.log("-->", {
-    query: options.query,
-    results: JSON.stringify(links),
-  })
+  console.log(
+    "-->",
+    JSON.stringify({
+      query: options.query,
+      results: links,
+    }),
+  )
 
   const finalResults = await Promise.allSettled(
     links.map((item) => options.queue.add(() => visitLink(context, item.url))),
