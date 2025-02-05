@@ -46,21 +46,21 @@ async function main() {
 
   cli
     .command("search", "run search")
-    .option("-k, --keyword <keyword>", "keyword to search")
+    .option("-q, --query <query>", "The search query")
     .option("-c, --concurrency <concurrency>", "concurrency")
     .option("--show", "Show browser")
     .option("--max-results <num>", "Max search results")
     .option("--browser <browser>", "Choose a browser to use")
     .action(
       async (options: {
-        keyword?: string | string[]
+        query?: string | string[]
         concurrency?: number
         show?: boolean
         maxResults?: number
         browser?: string
       }) => {
-        if (!options.keyword) {
-          throw new Error("missing keyword")
+        if (!options.query) {
+          throw new Error("missing query")
         }
 
         await using browser = await launchBrowser({
@@ -69,14 +69,14 @@ async function main() {
         })
         const { context } = browser
 
-        const keywords = Array.isArray(options.keyword)
-          ? options.keyword
-          : [options.keyword]
+        const queries = Array.isArray(options.query)
+          ? options.query
+          : [options.query]
 
         await Promise.all(
-          keywords.map((keyword) =>
+          queries.map((query) =>
             search(context, {
-              keyword,
+              query,
               concurrency: options.concurrency,
               maxResults: options.maxResults,
             }),
@@ -95,6 +95,8 @@ async function main() {
 
     if (error instanceof WebSearchError) {
       console.error(error.message)
+    } else if (error instanceof Error && error.name === "CACError") {
+      console.error(error.message)
     } else {
       console.error(error)
     }
@@ -105,13 +107,13 @@ main()
 
 async function search(
   context: Browser,
-  options: { keyword: string; concurrency?: number; maxResults?: number },
+  options: { query: string; concurrency?: number; maxResults?: number },
 ) {
   const page = await context.newPage()
 
   await interceptRequest(page)
   const url = `https://www.google.com/search?q=${encodeURIComponent(
-    stripQuotes(options.keyword),
+    stripQuotes(options.query),
   )}&num=${options.maxResults || 10}`
 
   await page.goto(url, {
@@ -141,7 +143,7 @@ async function search(
   })
 
   console.log("-->", {
-    keyword: options.keyword,
+    query: options.query,
     results: JSON.stringify(links),
   })
 
@@ -154,7 +156,7 @@ async function search(
   console.log(
     "-->",
     JSON.stringify({
-      keyword: options.keyword,
+      query: options.query,
       results: finalResults
         .map((item) => (item.status === "fulfilled" ? item.value : null))
         .filter((v) => v?.content),

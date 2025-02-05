@@ -9,7 +9,7 @@ This is designed to be used in [ChatWise](https://chatwise.app)'s [local web sea
 bun run watch
 
 # tab 2
-bun ./dist/cli.js search -k "some keyword"
+bun ./dist/cli.js search -q "some keyword"
 ```
 
 ## License
