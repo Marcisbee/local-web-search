@@ -51,7 +51,7 @@ async function main() {
     .option("--max-results <num>", "Max search results")
     .action(
       async (options: {
-        keyword?: string
+        keyword?: string | string[]
         concurrency?: number
         show?: boolean
         maxResults?: number
@@ -63,53 +63,17 @@ async function main() {
         await using browser = await launchBrowser({ show: options.show })
         const { context } = browser
 
-        const page = await context.newPage()
+        const keywords = Array.isArray(options.keyword)
+          ? options.keyword
+          : [options.keyword]
 
-        await interceptRequest(page)
-        const url = `https://www.google.com/search?q=${encodeURIComponent(
-          stripQuotes(options.keyword),
-        )}&num=${options.maxResults || 10}`
-
-        await page.goto(url, {
-          waitUntil: "networkidle2",
-        })
-
-        const links = await page.evaluate(() => {
-          const elements = document.querySelectorAll(".g")
-
-          const links: SearchResult[] = []
-
-          elements.forEach((element) => {
-            const titleEl = element.querySelector("h3")
-            const urlEl = element.querySelector("a")
-
-            const item: SearchResult = {
-              title: titleEl?.textContent || "",
-              url: urlEl?.getAttribute("href") || "",
-            }
-
-            if (!item.title || !item.url) return
-
-            links.push(item)
-          })
-
-          return links
-        })
-
-        console.log("-->", JSON.stringify(links))
-
-        const limit = Limit(options.concurrency || 20)
-
-        const finalResults = await Promise.allSettled(
-          links.map((item) => limit(() => visitLink(context, item.url))),
-        )
-
-        console.log(
-          "-->",
-          JSON.stringify(
-            finalResults
-              .map((item) => (item.status === "fulfilled" ? item.value : null))
-              .filter((v) => v?.content),
+        await Promise.all(
+          keywords.map((keyword) =>
+            search(context, {
+              keyword,
+              concurrency: options.concurrency,
+              maxResults: options.maxResults,
+            }),
           ),
         )
       },
@@ -120,6 +84,65 @@ async function main() {
 }
 
 main()
+
+async function search(
+  context: Browser,
+  options: { keyword: string; concurrency?: number; maxResults?: number },
+) {
+  const page = await context.newPage()
+
+  await interceptRequest(page)
+  const url = `https://www.google.com/search?q=${encodeURIComponent(
+    stripQuotes(options.keyword),
+  )}&num=${options.maxResults || 10}`
+
+  await page.goto(url, {
+    waitUntil: "networkidle2",
+  })
+
+  const links = await page.evaluate(() => {
+    const elements = document.querySelectorAll(".g")
+
+    const links: SearchResult[] = []
+
+    elements.forEach((element) => {
+      const titleEl = element.querySelector("h3")
+      const urlEl = element.querySelector("a")
+
+      const item: SearchResult = {
+        title: titleEl?.textContent || "",
+        url: urlEl?.getAttribute("href") || "",
+      }
+
+      if (!item.title || !item.url) return
+
+      links.push(item)
+    })
+
+    return links
+  })
+
+  console.log("-->", {
+    keyword: options.keyword,
+    results: JSON.stringify(links),
+  })
+
+  const limit = Limit(options.concurrency || 20)
+
+  const finalResults = await Promise.allSettled(
+    links.map((item) => limit(() => visitLink(context, item.url))),
+  )
+
+  console.log(
+    "-->",
+    JSON.stringify({
+      keyword: options.keyword,
+      results: finalResults
+        .map((item) => (item.status === "fulfilled" ? item.value : null))
+        .filter((v) => v?.content),
+    }),
+  )
+}
 
 async function interceptRequest(page: Page) {
   await applyStealthScripts(page)
