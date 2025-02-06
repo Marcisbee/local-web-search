@@ -12,8 +12,8 @@ type SearchResult = {
   content?: string
 }
 
-const stripQuotes = (text: string) => {
-  return text.replace(/^"|"$/g, "")
+const stripQuotes = (text: string | undefined) => {
+  return text?.replace(/^"|"$/g, "") || ""
 }
 
 const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
@@ -42,6 +42,14 @@ const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
   }
 }
 
+type Options = {
+  query?: string | string[]
+  concurrency?: number
+  show?: boolean
+  maxResults?: number
+  browser?: string
+}
+
 async function main() {
   const cli = cac()
 
@@ -52,49 +60,41 @@ async function main() {
     .option("--show", "Show browser")
     .option("--max-results <num>", "Max search results")
     .option("--browser <browser>", "Choose a browser to use")
-    .action(
-      async (options: {
-        query?: string | string[]
-        concurrency?: number
-        show?: boolean
-        maxResults?: number
-        browser?: string
-      }) => {
-        if (!options.query) {
-          throw new Error("missing query")
-        }
+    .action(async (options: Options) => {
+      if (!options.query) {
+        throw new Error("missing query")
+      }
 
-        const queries = Array.isArray(options.query)
-          ? options.query
-          : [options.query]
+      const queries = Array.isArray(options.query)
+        ? options.query
+        : [options.query]
 
-        // limit the max results for each query, minimal 3
-        const maxResults =
-          options.maxResults &&
-          Math.max(3, Math.floor(options.maxResults / queries.length))
+      // limit the max results for each query, minimal 3
+      const maxResults =
+        options.maxResults &&
+        Math.max(3, Math.floor(options.maxResults / queries.length))
 
-        await using browser = await launchBrowser({
-          show: options.show,
-          browser: options.browser,
-        })
-        const { context } = browser
+      await using browser = await launchBrowser({
+        show: options.show,
+        browser: stripQuotes(options.browser),
+      })
+      const { context } = browser
 
-        const queue = new Queue({ concurrency: options.concurrency || 15 })
+      const queue = new Queue({ concurrency: options.concurrency || 15 })
 
-        const visitedUrls = new Set<string>()
+      const visitedUrls = new Set<string>()
 
-        await Promise.all(
-          queries.map((query) =>
-            search(context, {
-              query,
-              maxResults,
-              queue,
-              visitedUrls,
-            }),
-          ),
-        )
-      },
-    )
+      await Promise.all(
+        queries.map((query) =>
+          search(context, {
+            query,
+            maxResults,
+            queue,
+            visitedUrls,
+          }),
+        ),
+      )
+    })
 
   cli.help()
 
