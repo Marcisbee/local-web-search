@@ -46,7 +46,11 @@ const browsers: Browser[] = [
 
 export function findChrome(name?: string): string {
   const browser = name
-    ? browsers.find((b) => b.name === name)
+    ? browsers.find(
+        (b) =>
+          b.name === name &&
+          fs.existsSync(b[process.platform === "darwin" ? "darwin" : "win32"]),
+      )
     : browsers.find((browser) =>
         fs.existsSync(
           browser[process.platform === "darwin" ? "darwin" : "win32"],

@@ -235,7 +235,7 @@ async function visitLink(context: Browser, url: string) {
   await page.close()
 
   const content = toMarkdown(result.content)
-  console.log(content)
+
   return { ...result, url, content: content }
 }
 
