@@ -65,18 +65,19 @@ async function main() {
         throw new Error("missing query")
       }
 
-      const queries = Array.isArray(options.query)
-        ? options.query
-        : [options.query]
+      const queries = (
+        Array.isArray(options.query) ? options.query : [options.query]
+      ).map((query) => stripQuotes(query))
 
       // limit the max results for each query, minimal 3
       const maxResults =
         options.maxResults &&
         Math.max(3, Math.floor(options.maxResults / queries.length))
 
+      const browserName = stripQuotes(options.browser)
       await using browser = await launchBrowser({
         show: options.show,
-        browser: stripQuotes(options.browser),
+        browser: browserName,
       })
       const { context } = browser
 
@@ -129,7 +130,7 @@ async function search(
 
   await interceptRequest(page)
   const url = `https://www.google.com/search?q=${encodeURIComponent(
-    stripQuotes(options.query),
+    options.query,
   )}&num=${options.maxResults || 10}`
 
   await page.goto(url, {
