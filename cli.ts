@@ -48,6 +48,7 @@ type Options = {
   show?: boolean
   maxResults?: number
   browser?: string
+  excludeDomain?: string | string[]
 }
 
 async function main() {
@@ -60,6 +61,7 @@ async function main() {
     .option("--show", "Show browser")
     .option("--max-results <num>", "Max search results")
     .option("--browser <browser>", "Choose a browser to use")
+    .option("--exclude-domain <domain>", "Exclude domains from the result")
     .action(async (options: Options) => {
       if (!options.query) {
         throw new Error("missing query")
@@ -68,6 +70,14 @@ async function main() {
       const queries = (
         Array.isArray(options.query) ? options.query : [options.query]
       ).map((query) => stripQuotes(query))
+
+      const excludeDomains = (
+        Array.isArray(options.excludeDomain)
+          ? options.excludeDomain
+          : options.excludeDomain
+            ? [options.excludeDomain]
+            : []
+      ).map((domain) => stripQuotes(domain))
 
       // limit the max results for each query, minimal 3
       const maxResults =
@@ -92,6 +102,7 @@ async function main() {
             maxResults,
             queue,
             visitedUrls,
+            excludeDomains,
           }),
         ),
       )
@@ -124,13 +135,16 @@ async function search(
     maxResults?: number
     queue: Queue
     visitedUrls: Set<string>
+    excludeDomains: string[]
   },
 ) {
   const page = await context.newPage()
 
   await interceptRequest(page)
   const url = `https://www.google.com/search?q=${encodeURIComponent(
-    options.query,
+    (options.excludeDomains.length > 0
+      ? `${options.excludeDomains.map((domain) => `-site:${domain}`).join(" ")} `
+      : "") + options.query,
   )}&num=${options.maxResults || 10}`
 
   await page.goto(url, {
