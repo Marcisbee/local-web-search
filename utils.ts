@@ -1,5 +1,17 @@
+const parseUrl = (url: string) => {
+  try {
+    return new URL(url)
+  } catch (error) {
+    return null
+  }
+}
+
 export const shouldSkipDomain = (url: string) => {
-  const { hostname } = new URL(url)
+  const parsed = parseUrl(url)
+
+  if (!parsed) return true
+
+  const { hostname } = parsed
 
   return [
     "reddit.com",
