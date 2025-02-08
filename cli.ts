@@ -5,15 +5,12 @@ import Queue from "p-queue"
 import { toMarkdown } from "./to-markdown"
 import { WebSearchError } from "./error"
 import { shouldSkipDomain } from "./utils"
+import { loadConfig } from "./config"
 
 type SearchResult = {
   title: string
   url: string
   content?: string
-}
-
-const stripQuotes = (text: string | undefined) => {
-  return text?.replace(/^"|"$/g, "") || ""
 }
 
 const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
@@ -62,29 +59,32 @@ async function main() {
     .option("--max-results <num>", "Max search results")
     .option("--browser <browser>", "Choose a browser to use")
     .option("--exclude-domain <domain>", "Exclude domains from the result")
-    .action(async (options: Options) => {
+    .action(async (_options: Options) => {
+      const options: Options = {
+        ...loadConfig(),
+        ..._options,
+      }
+
       if (!options.query) {
         throw new Error("missing query")
       }
 
-      const queries = (
-        Array.isArray(options.query) ? options.query : [options.query]
-      ).map((query) => stripQuotes(query))
+      const queries = Array.isArray(options.query)
+        ? options.query
+        : [options.query]
 
-      const excludeDomains = (
-        Array.isArray(options.excludeDomain)
-          ? options.excludeDomain
-          : options.excludeDomain
-            ? [options.excludeDomain]
-            : []
-      ).map((domain) => stripQuotes(domain))
+      const excludeDomains = Array.isArray(options.excludeDomain)
+        ? options.excludeDomain
+        : options.excludeDomain
+          ? [options.excludeDomain]
+          : []
 
       // limit the max results for each query, minimal 3
       const maxResults =
         options.maxResults &&
         Math.max(3, Math.floor(options.maxResults / queries.length))
 
-      const browserName = stripQuotes(options.browser)
+      const browserName = options.browser
       await using browser = await launchBrowser({
         show: options.show,
         browser: browserName,
