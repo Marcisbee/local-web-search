@@ -5,11 +5,7 @@ This is designed to be used in [ChatWise](https://chatwise.app)'s [local web sea
 ## Development
 
 ```bash
-# tab 1
-bun run watch
-
-# tab 2
-bun ./dist/cli.js search -q "some keyword"
+bun ./src/cli.ts search -q "some keyword" --show
 ```
 
 ## License

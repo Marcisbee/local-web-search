@@ -3,12 +3,13 @@
   "version": "0.1.23",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "/cli.js"
   ],
-  "bin": "./dist/cli.js",
+  "bin": "cli.js",
   "scripts": {
-    "build": "rm -rf dist && rolldown -c",
-    "watch": "rolldown --watch -c",
+    "build": "rm -rf dist && bun build ./src/cli.ts --outfile=dist/cli.js --target=node --external=puppeteer-core",
+    "watch": "bun run build --watch",
     "prepublishOnly": "bun run build"
   },
   "devDependencies": {

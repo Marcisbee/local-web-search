@@ -6,6 +6,7 @@ import { toMarkdown } from "./to-markdown"
 import { WebSearchError } from "./error"
 import { shouldSkipDomain } from "./utils"
 import { loadConfig } from "./config"
+import { getReadabilityScript } from "./readability" with { type: "macro" }
 
 type SearchResult = {
   title: string
@@ -33,9 +34,6 @@ const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
 
   return {
     context,
-    [Symbol.asyncDispose]: async () => {
-      await context.close()
-    },
   }
 }
 
@@ -85,27 +83,30 @@ async function main() {
         Math.max(3, Math.floor(options.maxResults / queries.length))
 
       const browserName = options.browser
-      await using browser = await launchBrowser({
+      const { context } = await launchBrowser({
         show: options.show,
         browser: browserName,
       })
-      const { context } = browser
 
-      const queue = new Queue({ concurrency: options.concurrency || 15 })
+      try {
+        const queue = new Queue({ concurrency: options.concurrency || 15 })
 
-      const visitedUrls = new Set<string>()
+        const visitedUrls = new Set<string>()
 
-      await Promise.all(
-        queries.map((query) =>
-          search(context, {
-            query,
-            maxResults,
-            queue,
-            visitedUrls,
-            excludeDomains,
-          }),
-        ),
-      )
+        await Promise.all(
+          queries.map((query) =>
+            search(context, {
+              query,
+              maxResults,
+              queue,
+              visitedUrls,
+              excludeDomains,
+            }),
+          ),
+        )
+      } finally {
+        context.close()
+      }
     })
 
   cli.help()
@@ -227,7 +228,7 @@ async function visitLink(context: Browser, url: string) {
   })
 
   await page.addScriptTag({
-    content: __READABILITY_SCRIPT__,
+    content: getReadabilityScript(),
   })
 
   const result = await page.evaluate(() => {
