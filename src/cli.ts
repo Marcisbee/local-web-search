@@ -88,6 +88,15 @@ async function main() {
         browser: browserName,
       })
 
+      process.stdin.on("data", async (data) => {
+        const str = data.toString().trim()
+
+        if (str === "exit") {
+          await context.close()
+          process.exit()
+        }
+      })
+
       try {
         const queue = new Queue({ concurrency: options.concurrency || 15 })
 
@@ -104,8 +113,10 @@ async function main() {
             }),
           ),
         )
-      } finally {
-        context.close()
+        await context.close()
+      } catch (error) {
+        await context.close()
+        handleError(error)
       }
     })
 
@@ -115,19 +126,23 @@ async function main() {
     cli.parse(process.argv, { run: false })
     await cli.runMatchedCommand()
   } catch (error) {
-    process.exitCode = 1
-
-    if (error instanceof WebSearchError) {
-      console.error(error.message)
-    } else if (error instanceof Error && error.name === "CACError") {
-      console.error(error.message)
-    } else {
-      console.error(error)
-    }
+    handleError(error)
   }
 }
 
 main()
+
+function handleError(error: unknown) {
+  if (error instanceof WebSearchError) {
+    console.error(error.message)
+  } else if (error instanceof Error && error.name === "CACError") {
+    console.error(error.message)
+  } else {
+    console.error(error)
+  }
+
+  process.exit(1)
+}
 
 async function search(
   context: Browser,
