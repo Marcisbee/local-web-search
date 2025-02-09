@@ -88,13 +88,8 @@ async function main() {
         browser: browserName,
       })
 
-      process.stdin.on("data", async (data) => {
-        const str = data.toString().trim()
-
-        if (str === "exit") {
-          await context.close()
-          process.exit()
-        }
+      process.stdin.on("data", (data) => {
+        handleStdin(data, context)
       })
 
       try {
@@ -130,7 +125,21 @@ async function main() {
   }
 }
 
+process.stdin.on("data", (data) => {
+  handleStdin(data)
+})
+
 main()
+
+async function handleStdin(data: Buffer, context?: Browser) {
+  const str = data.toString().trim()
+  if (str === "exit") {
+    if (context) {
+      await context.close()
+    }
+    process.exit()
+  }
+}
 
 function handleError(error: unknown) {
   if (error instanceof WebSearchError) {
