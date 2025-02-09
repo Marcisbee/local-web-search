@@ -67,9 +67,6 @@ const launchRealBrowser = async (
       await page.goto(url, {
         waitUntil: "networkidle2",
       })
-      page.on("console", (message) => {
-        console.log(message.text())
-      })
 
       const win = await page.evaluateHandle(() => window)
       const result = await page.evaluate(fn, win, ...fnArgs)
