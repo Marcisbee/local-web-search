@@ -1,0 +1,42 @@
+import { Window } from "happy-dom"
+
+export async function domFetchAndEvaluate<T, TArg extends any[]>(
+  url: string,
+  fn: (window: Window, ...args: TArg) => T,
+  fnArgs: TArg,
+): Promise<T> {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36",
+    },
+  })
+
+  if (!res.ok) {
+    throw new Error(`failed to fetch ${url}, status: ${res.status}`)
+  }
+
+  const html = await res.text()
+
+  const window = new Window({
+    url,
+    settings: {
+      disableJavaScriptFileLoading: true,
+      disableJavaScriptEvaluation: true,
+      disableCSSFileLoading: true,
+    },
+  })
+
+  window.document.write(html)
+
+  await window.happyDOM.waitUntilComplete()
+
+  try {
+    const result = fn(window, ...fnArgs)
+    await window.happyDOM.close()
+    return result
+  } catch (error) {
+    await window.happyDOM.close()
+    throw error
+  }
+}

@@ -8,7 +8,7 @@
   ],
   "bin": "cli.js",
   "scripts": {
-    "build": "rm -rf dist && bun build ./src/cli.ts --outfile=dist/cli.js --target=node --external=puppeteer-core",
+    "build": "rm -rf dist && bun build ./src/cli.ts --outfile=dist/cli.js --target=node --external=puppeteer-core --external=happy-dom",
     "watch": "bun run build --watch",
     "prepublishOnly": "bun run build"
   },
@@ -25,6 +25,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "happy-dom": "^17.0.2",
     "puppeteer-core": "24.1.1"
   },
   "license": "MIT",
