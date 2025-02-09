@@ -109,6 +109,7 @@ async function main() {
           ),
         )
         await context.close()
+        process.exit()
       } catch (error) {
         await context.close()
         handleError(error)
