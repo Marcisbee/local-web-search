@@ -23,12 +23,15 @@ const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
       // "--use-gl=swiftshader",
       // "--enable-accelerated-2d-canvas",
       "--disable-blink-features=AutomationControlled",
-      "--disable-web-security",
+      // "--disable-web-security",
     ],
     ignoreDefaultArgs: ["--enable-automation"],
     defaultViewport: {
       width: 1280,
       height: 720,
+    },
+    downloadBehavior: {
+      policy: "deny",
     },
   })
 
