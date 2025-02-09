@@ -7,6 +7,7 @@ import { loadConfig } from "./config"
 import { getReadabilityScript } from "./macro" with { type: "macro" }
 import { getSearchPageLinks } from "./extract"
 import { launchBrowser, type BrowserMethods } from "./browser"
+import { writeStdout } from "./stdio"
 
 export type SearchResult = {
   title: string
@@ -190,26 +191,24 @@ async function search(
     return !shouldSkipDomain(link.url)
   })
 
-  console.log(
-    "-->",
-    JSON.stringify({
+  await writeStdout(
+    `:local-web-search:${JSON.stringify({
       query: options.query,
       results: links,
-    }),
+    })}\n`,
   )
 
   const finalResults = await Promise.allSettled(
     links.map((item) => options.queue.add(() => visitLink(browser, item.url))),
   )
 
-  console.log(
-    "-->",
-    JSON.stringify({
+  await writeStdout(
+    `:local-web-search:${JSON.stringify({
       query: options.query,
       results: finalResults
         .map((item) => (item.status === "fulfilled" ? item.value : null))
         .filter((v) => v?.content),
-    }),
+    })}\n`,
   )
 }
 
