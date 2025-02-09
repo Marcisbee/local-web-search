@@ -40,6 +40,8 @@ const launchBrowser = async (options: { show?: boolean; browser?: string }) => {
   }
 }
 
+type SearchTopic = "general" | "news"
+
 type Options = {
   query?: string | string[]
   concurrency?: number
@@ -47,6 +49,7 @@ type Options = {
   maxResults?: number
   browser?: string
   excludeDomain?: string | string[]
+  topic?: SearchTopic
 }
 
 async function main() {
@@ -60,6 +63,7 @@ async function main() {
     .option("--max-results <num>", "Max search results")
     .option("--browser <browser>", "Choose a browser to use")
     .option("--exclude-domain <domain>", "Exclude domains from the result")
+    .option("--topic <topic>", "The search topic")
     .action(async (_options: Options) => {
       const options: Options = {
         ...loadConfig(),
@@ -108,6 +112,7 @@ async function main() {
               queue,
               visitedUrls,
               excludeDomains,
+              topic: options.topic,
             }),
           ),
         )
@@ -165,42 +170,75 @@ async function search(
     queue: Queue
     visitedUrls: Set<string>
     excludeDomains: string[]
+    topic?: SearchTopic
   },
 ) {
   const page = await context.newPage()
 
   await interceptRequest(page)
-  const url = `https://www.google.com/search?q=${encodeURIComponent(
-    (options.excludeDomains.length > 0
-      ? `${options.excludeDomains.map((domain) => `-site:${domain}`).join(" ")} `
-      : "") + options.query,
-  )}&num=${options.maxResults || 10}`
+
+  const searchParams = new URLSearchParams({
+    q: `${
+      options.excludeDomains.length > 0
+        ? `${options.excludeDomains.map((domain) => `-site:${domain}`).join(" ")} `
+        : ""
+    }${options.query}`,
+
+    num: `${options.maxResults || 10}`,
+  })
+
+  if (options.topic === "news") {
+    searchParams.set("tbm", "nws")
+  }
+
+  const url = `https://www.google.com/search?${searchParams.toString()}`
 
   await page.goto(url, {
     waitUntil: "networkidle2",
   })
 
-  let links = await page.evaluate(() => {
-    const elements = document.querySelectorAll(".g")
-
+  let links = await page.evaluate((topic) => {
     const links: SearchResult[] = []
 
-    elements.forEach((element) => {
-      const titleEl = element.querySelector("h3")
-      const urlEl = element.querySelector("a")
+    if (topic === "news") {
+      const elements = document.querySelectorAll("[data-news-cluster-id]")
+      elements.forEach((element) => {
+        const linkEl = element.querySelector("a")
+        const url = linkEl?.getAttribute("href")
 
-      const item: SearchResult = {
-        title: titleEl?.textContent || "",
-        url: urlEl?.getAttribute("href") || "",
-      }
+        if (!url) return
 
-      if (!item.title || !item.url) return
+        const titleEl = element.querySelector('[role="heading"]')
+        const title = titleEl?.textContent || ""
+        if (!title) return
 
-      links.push(item)
-    })
+        const snippetEl = titleEl?.nextElementSibling
+        const snippet = snippetEl?.textContent || ""
+        links.push({
+          url,
+          title,
+          content: snippet,
+        })
+      })
+    } else {
+      const elements = document.querySelectorAll(".g")
+      elements.forEach((element) => {
+        const titleEl = element.querySelector("h3")
+        const urlEl = element.querySelector("a")
+
+        const item: SearchResult = {
+          title: titleEl?.textContent || "",
+          url: urlEl?.getAttribute("href") || "",
+        }
+
+        if (!item.title || !item.url) return
+
+        links.push(item)
+      })
+    }
 
     return links
-  })
+  }, options.topic)
 
   links = links.filter((link) => {
     if (options.visitedUrls.has(link.url)) return false
