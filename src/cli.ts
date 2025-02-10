@@ -162,7 +162,11 @@ function getSearchUrl(options: SearchOptions) {
   })
 
   if (options.topic === "news") {
+    // news tab
     searchParams.set("tbm", "nws")
+  } else {
+    // web tab
+    searchParams.set("udm", "14")
   }
 
   const url = `https://www.google.com/search?${searchParams.toString()}`
