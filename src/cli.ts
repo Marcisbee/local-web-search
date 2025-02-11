@@ -25,6 +25,8 @@ type Options = {
   browser?: string
   excludeDomain?: string | string[]
   topic?: SearchTopic
+  /** keepp the first {number} of characters in each page */
+  truncate?: number
 }
 
 async function main() {
@@ -40,6 +42,7 @@ async function main() {
     .option("--exclude-domain <domain>", "Exclude domains from the result")
     .option("--topic <topic>", "The search topic")
     .option("--fake", "Use fake browser")
+    .option("--truncate <num>", "Truncate page content")
     .action(async ({ fake, ..._options }: Options & { fake?: boolean }) => {
       const options: Options = {
         ...loadConfig(),
@@ -94,6 +97,7 @@ async function main() {
               visitedUrls,
               excludeDomains,
               topic: options.topic,
+              truncate: options.truncate,
             }),
           ),
         )
@@ -148,6 +152,7 @@ type SearchOptions = {
   maxResults?: number
   excludeDomains: string[]
   topic?: SearchTopic
+  truncate?: number
 }
 
 function getSearchUrl(options: SearchOptions) {
@@ -213,7 +218,16 @@ async function search(
     `:local-web-search:${JSON.stringify({
       query: options.query,
       results: finalResults
-        .map((item) => (item.status === "fulfilled" ? item.value : null))
+        .map((item) => {
+          if (item.status === "rejected" || !item.value) return null
+
+          return {
+            ...item.value,
+            content: options.truncate
+              ? item.value.content.slice(0, options.truncate)
+              : item.value.content,
+          }
+        })
         .filter((v) => v?.content),
     })}\n`,
   )
