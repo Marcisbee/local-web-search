@@ -21,7 +21,7 @@ export type BrowserMethods = {
     url: string,
     fn: (window: Window, ...args: T) => R,
     fnArgs: T,
-  ) => Promise<R>
+  ) => Promise<R | null>
 }
 
 export const launchBrowser = async (options: Options) => {

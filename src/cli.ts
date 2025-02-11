@@ -187,13 +187,16 @@ async function search(
     options.topic,
   ])
 
-  links = links.filter((link) => {
-    if (options.visitedUrls.has(link.url)) return false
+  links =
+    links?.filter((link) => {
+      if (options.visitedUrls.has(link.url)) return false
 
-    options.visitedUrls.add(link.url)
+      options.visitedUrls.add(link.url)
 
-    return !shouldSkipDomain(link.url)
-  })
+      return !shouldSkipDomain(link.url)
+    }) || null
+
+  if (!links || links.length === 0) return
 
   await writeStdout(
     `:local-web-search:${JSON.stringify({
@@ -245,6 +248,8 @@ async function visitLink(browser: BrowserMethods, url: string) {
     },
     [readabilityScript],
   )
+
+  if (!result) return null
 
   const content = toMarkdown(result.content)
 

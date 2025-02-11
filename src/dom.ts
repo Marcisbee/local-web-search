@@ -4,7 +4,7 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
   url: string,
   fn: (window: Window, ...args: TArg) => T,
   fnArgs: TArg,
-): Promise<T> {
+): Promise<T | null> {
   const res = await fetch(url, {
     headers: {
       "User-Agent":
@@ -24,19 +24,22 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
       disableJavaScriptFileLoading: true,
       disableJavaScriptEvaluation: true,
       disableCSSFileLoading: true,
+      timer: {
+        maxTimeout: 3000,
+        maxIntervalTime: 3000,
+      },
     },
   })
 
-  window.document.write(html)
-
-  await window.happyDOM.waitUntilComplete()
-
   try {
+    window.document.write(html)
+    await window.happyDOM.waitUntilComplete()
     const result = fn(window, ...fnArgs)
     await window.happyDOM.close()
     return result
   } catch (error) {
     await window.happyDOM.close()
-    throw error
+    console.error(error)
+    return null
   }
 }
