@@ -13,13 +13,13 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
   })
 
   if (!res.ok) {
-    throw new Error(`failed to fetch ${url}, status: ${res.status}`)
+    console.error(`failed to fetch ${url}, status: ${res.status}`)
+    return null
   }
 
   const html = await res.text()
 
   const window = new Window({
-    url,
     settings: {
       disableJavaScriptFileLoading: true,
       disableJavaScriptEvaluation: true,
