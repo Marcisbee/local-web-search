@@ -24,3 +24,7 @@ export const shouldSkipDomain = (url: string) => {
     "www.youtube.com",
   ].includes(hostname)
 }
+
+export const stripHTML = (html: string) => {
+  return html.replace(/<[^>]*>?/g, "")
+}

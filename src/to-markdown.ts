@@ -1,5 +1,6 @@
 import Turndown from "turndown"
 import { gfm } from "turndown-plugin-gfm"
+import { stripHTML } from "./utils"
 
 const turndown = new Turndown({
   codeBlockStyle: "fenced",
@@ -7,5 +8,5 @@ const turndown = new Turndown({
 turndown.use(gfm)
 
 export function toMarkdown(html: string) {
-  return turndown.turndown(html)
+  return stripHTML(turndown.turndown(html))
 }
