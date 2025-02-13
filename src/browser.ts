@@ -63,16 +63,20 @@ const launchRealBrowser = async (
     evaluateOnPage: async (url, fn, fnArgs) => {
       const page = await context.newPage()
 
-      await interceptRequest(page)
-      await page.goto(url, {
-        waitUntil: "networkidle2",
-      })
-
-      const win = await page.evaluateHandle(() => window)
-      const result = await page.evaluate(fn, win, ...fnArgs)
-      await win.dispose()
-
-      return result
+      try {
+        await interceptRequest(page)
+        await page.goto(url, {
+          waitUntil: "networkidle2",
+        })
+        const win = await page.evaluateHandle(() => window)
+        const result = await page.evaluate(fn, win, ...fnArgs)
+        await win.dispose()
+        await page.close()
+        return result
+      } catch (error) {
+        await page.close()
+        throw error
+      }
     },
   }
 }
