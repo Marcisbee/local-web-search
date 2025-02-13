@@ -1,11 +1,20 @@
 import { Window } from "happy-dom"
+import * as undici from "undici"
 
 export async function domFetchAndEvaluate<T, TArg extends any[]>(
   url: string,
   fn: (window: Window, ...args: TArg) => T,
   fnArgs: TArg,
 ): Promise<T | null> {
-  const res = await fetch(url, {
+  const res = await undici.fetch(url, {
+    dispatcher: new undici.Agent({
+      connect: {
+        // bypass SSL failures
+        rejectUnauthorized: false,
+      },
+      maxRedirections: 5,
+    }),
+    redirect: "follow",
     headers: {
       "User-Agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36",
@@ -39,7 +48,7 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
     return result
   } catch (error) {
     await window.happyDOM.close()
-    console.error(error)
+    console.error(url, error)
     return null
   }
 }
