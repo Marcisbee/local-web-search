@@ -1,4 +1,5 @@
 import type { SearchResult, SearchTopic } from "./cli"
+import { parseUrl } from "./utils"
 
 export function getSearchPageLinks(window: Window, topic?: SearchTopic) {
   const links: SearchResult[] = []
@@ -10,7 +11,7 @@ export function getSearchPageLinks(window: Window, topic?: SearchTopic) {
       const linkEl = element.querySelector("a")
       const url = linkEl?.getAttribute("href")
 
-      if (!url) return
+      if (!url || !parseUrl(url)) return
 
       const titleEl = element.querySelector('[role="heading"]')
       const title = titleEl?.textContent || ""
@@ -29,10 +30,13 @@ export function getSearchPageLinks(window: Window, topic?: SearchTopic) {
     elements.forEach((element) => {
       const titleEl = element.querySelector("h3")
       const urlEl = element.querySelector("a")
+      const url = urlEl?.getAttribute("href")
+
+      if (!url || !parseUrl(url)) return
 
       const item: SearchResult = {
         title: titleEl?.textContent || "",
-        url: urlEl?.getAttribute("href") || "",
+        url,
       }
 
       if (!item.title || !item.url) return
