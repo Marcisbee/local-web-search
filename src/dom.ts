@@ -6,23 +6,28 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
   fn: (window: Window, ...args: TArg) => T,
   fnArgs: TArg,
 ): Promise<T | null> {
-  const res = await undici.fetch(url, {
-    dispatcher: new undici.Agent({
-      connect: {
-        // bypass SSL failures
-        rejectUnauthorized: false,
+  const res = await undici
+    .fetch(url, {
+      dispatcher: new undici.Agent({
+        connect: {
+          // bypass SSL failures
+          rejectUnauthorized: false,
+        },
+        maxRedirections: 5,
+      }),
+      redirect: "follow",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36",
       },
-      maxRedirections: 5,
-    }),
-    redirect: "follow",
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36",
-    },
-  })
+    })
+    .catch((err) => {
+      console.error(err)
+      return null
+    })
 
-  if (!res.ok) {
-    console.error(`failed to fetch ${url}, status: ${res.status}`)
+  if (!res?.ok) {
+    console.error(`failed to fetch ${url}, status: ${res?.status || "unknown"}`)
     return null
   }
 
