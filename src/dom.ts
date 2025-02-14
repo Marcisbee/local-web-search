@@ -1,4 +1,4 @@
-import { Window } from "happy-dom"
+import { Browser } from "happy-dom"
 import * as undici from "undici"
 
 export async function domFetchAndEvaluate<T, TArg extends any[]>(
@@ -43,7 +43,7 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
 
   const html = await res.text()
 
-  const window = new Window({
+  const browser = new Browser({
     settings: {
       disableJavaScriptFileLoading: true,
       disableJavaScriptEvaluation: true,
@@ -56,13 +56,18 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
   })
 
   try {
-    window.document.write(html)
-    await window.happyDOM.waitUntilComplete()
-    const result = fn(window, ...fnArgs)
-    await window.happyDOM.close()
+    const page = browser.newPage()
+
+    page.url = url
+    page.content = html
+
+    await page.waitUntilComplete()
+
+    const result = fn(page.mainFrame.window as any, ...fnArgs)
+    await browser.close()
     return result
   } catch (error) {
-    await window.happyDOM.close()
+    await browser.close()
     console.error(url, error)
     return null
   }
