@@ -1,5 +1,5 @@
 import { launch, Page } from "puppeteer-core"
-import { findChrome } from "./find-chrome"
+import { findBrowser } from "./find-browser"
 import { domFetchAndEvaluate } from "./dom"
 
 type RealBrowserOptions = {
@@ -35,8 +35,10 @@ export const launchBrowser = async (options: Options) => {
 const launchRealBrowser = async (
   options: RealBrowserOptions,
 ): Promise<BrowserMethods> => {
+  const browser = findBrowser(options.browser)
+
   const context = await launch({
-    executablePath: findChrome(options.browser),
+    executablePath: browser.executable,
     headless: !options.show,
     args: [
       // "--enable-webgl",

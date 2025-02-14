@@ -8,6 +8,7 @@ import { getReadabilityScript } from "./macro" with { type: "macro" }
 import { getSearchPageLinks } from "./extract"
 import { launchBrowser, type BrowserMethods } from "./browser"
 import { writeStdout } from "./stdio"
+import { getBrowserProfiles } from "./find-browser"
 
 export type SearchResult = {
   title: string
@@ -31,6 +32,19 @@ type Options = {
 
 async function main() {
   const cli = cac()
+
+  cli
+    .command("list-profiles")
+    .option("--browser <browser>", "Choose a browser to use")
+    .action(async ({ browser }: { browser?: string }) => {
+      try {
+        const profiles = getBrowserProfiles(browser)
+        console.log(JSON.stringify(profiles))
+        process.exit()
+      } catch (error) {
+        handleError(error)
+      }
+    })
 
   cli
     .command("search", "run search")
