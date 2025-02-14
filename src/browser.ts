@@ -104,6 +104,12 @@ async function interceptRequest(page: Page) {
   await page.setRequestInterception(true)
 
   page.on("request", (request) => {
+    const resourceType = request.resourceType()
+
+    if (resourceType !== "document") {
+      return request.abort()
+    }
+
     if (request.isNavigationRequest()) {
       return request.continue()
     }

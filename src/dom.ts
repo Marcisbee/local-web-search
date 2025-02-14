@@ -26,6 +26,16 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
     return null
   }
 
+  const contentType = res.headers.get("content-type")
+
+  if (!contentType?.includes("text")) {
+    return null
+  }
+
+  if (!contentType.includes("html")) {
+    return null
+  }
+
   const html = await res.text()
 
   const window = new Window({
