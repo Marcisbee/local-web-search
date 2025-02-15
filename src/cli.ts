@@ -16,8 +16,6 @@ export type SearchResult = {
   content?: string
 }
 
-export type SearchTopic = "general" | "news"
-
 type Options = {
   query?: string | string[]
   concurrency?: number
@@ -25,7 +23,6 @@ type Options = {
   maxResults?: number
   browser?: string
   excludeDomain?: string | string[]
-  topic?: SearchTopic
   /** keepp the first {number} of characters in each page */
   truncate?: number
   proxy?: string
@@ -55,7 +52,6 @@ async function main() {
     .option("--max-results <num>", "Max search results")
     .option("--browser <browser>", "Choose a browser to use")
     .option("--exclude-domain <domain>", "Exclude domains from the result")
-    .option("--topic <topic>", "The search topic")
     .option("--fake", "Use fake browser")
     .option("--truncate <num>", "Truncate page content")
     .option("--proxy <proxy>", "Use a proxy")
@@ -113,7 +109,6 @@ async function main() {
               queue,
               visitedUrls,
               excludeDomains,
-              topic: options.topic,
               truncate: options.truncate,
             }),
           ),
@@ -168,7 +163,6 @@ type SearchOptions = {
   query: string
   maxResults?: number
   excludeDomains: string[]
-  topic?: SearchTopic
   truncate?: number
 }
 
@@ -183,13 +177,8 @@ function getSearchUrl(options: SearchOptions) {
     num: `${options.maxResults || 10}`,
   })
 
-  if (options.topic === "news") {
-    // news tab
-    searchParams.set("tbm", "nws")
-  } else {
-    // web tab
-    searchParams.set("udm", "14")
-  }
+  // web tab
+  searchParams.set("udm", "14")
 
   const url = `https://www.google.com/search?${searchParams.toString()}`
 
@@ -205,9 +194,7 @@ async function search(
 ) {
   const url = getSearchUrl(options)
 
-  let links = await browser.evaluateOnPage(url, getSearchPageLinks, [
-    options.topic,
-  ])
+  let links = await browser.evaluateOnPage(url, getSearchPageLinks, [])
 
   links =
     links?.filter((link) => {
