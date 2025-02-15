@@ -6,10 +6,12 @@ type RealBrowserOptions = {
   type: "real"
   show?: boolean
   browser?: string
+  proxy?: string
 }
 
 type FakeBrowserOptions = {
   type: "fake"
+  proxy?: string
 }
 
 type Options = RealBrowserOptions | FakeBrowserOptions
@@ -46,7 +48,8 @@ const launchRealBrowser = async (
       // "--enable-accelerated-2d-canvas",
       "--disable-blink-features=AutomationControlled",
       // "--disable-web-security",
-    ],
+      options.proxy ? `--proxy-server=${options.proxy}` : null,
+    ].filter((v) => v !== null),
     ignoreDefaultArgs: ["--enable-automation"],
     defaultViewport: {
       width: 1280,
@@ -94,6 +97,7 @@ const launchFakeBrowser = async (
         url,
         (window, ...args) => fn(window as any, ...args),
         fnArgs,
+        { proxy: options.proxy },
       )
 
       return result

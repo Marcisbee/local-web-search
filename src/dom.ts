@@ -1,15 +1,12 @@
 import { Browser } from "happy-dom"
 import * as undici from "undici"
-import { getSystemProxy } from "os-proxy-config"
-
-const proxyPromise = getSystemProxy()
 
 export async function domFetchAndEvaluate<T, TArg extends any[]>(
   url: string,
   fn: (window: Window, ...args: TArg) => T,
   fnArgs: TArg,
+  options: { proxy?: string },
 ): Promise<T | null> {
-  const proxy = await proxyPromise
   const agentOptions: undici.Agent.Options = {
     connect: {
       // bypass SSL failures
@@ -18,16 +15,12 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
     maxRedirections: 5,
   }
 
-  const proxyUrl =
-    process.env.HTTP_PROXY ||
-    (proxy && proxy.proxyUrl.replace("https://", "http://"))
-
   const res = await undici
     .fetch(url, {
-      dispatcher: proxyUrl
+      dispatcher: options.proxy
         ? new undici.ProxyAgent({
             ...agentOptions,
-            uri: proxyUrl,
+            uri: options.proxy,
           })
         : new undici.Agent({
             ...agentOptions,

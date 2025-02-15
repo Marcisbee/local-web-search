@@ -28,6 +28,7 @@ type Options = {
   topic?: SearchTopic
   /** keepp the first {number} of characters in each page */
   truncate?: number
+  proxy?: string
 }
 
 async function main() {
@@ -57,6 +58,7 @@ async function main() {
     .option("--topic <topic>", "The search topic")
     .option("--fake", "Use fake browser")
     .option("--truncate <num>", "Truncate page content")
+    .option("--proxy <proxy>", "Use a proxy")
     .action(async ({ fake, ..._options }: Options & { fake?: boolean }) => {
       const options: Options = {
         ...loadConfig(),
@@ -85,11 +87,12 @@ async function main() {
       const browserName = options.browser
       const browser = await launchBrowser(
         fake
-          ? { type: "fake" }
+          ? { type: "fake", proxy: options.proxy }
           : {
               type: "real",
               show: options.show,
               browser: browserName,
+              proxy: options.proxy,
             },
       )
 
