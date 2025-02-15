@@ -8,7 +8,7 @@
   ],
   "bin": "cli.js",
   "scripts": {
-    "build": "rm -rf dist && bun build ./src/cli.ts --outfile=dist/cli.js --target=node --external=puppeteer-core --external=happy-dom",
+    "build": "rm -rf dist && bun build ./src/cli.ts --outdir=dist --target=node --external=puppeteer-core --external=happy-dom --external=undici --external=os-proxy-config",
     "watch": "bun run build --watch",
     "prepublishOnly": "bun run build"
   },
@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "happy-dom": "^17.0.2",
+    "os-proxy-config": "^1.1.1",
     "puppeteer-core": "24.1.1",
     "undici": "^7.3.0"
   },
