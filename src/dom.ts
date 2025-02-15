@@ -8,7 +8,7 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
 ): Promise<T | null> {
   const res = await undici
     .fetch(url, {
-      dispatcher: new undici.Agent({
+      dispatcher: new undici.EnvHttpProxyAgent({
         connect: {
           // bypass SSL failures
           rejectUnauthorized: false,
