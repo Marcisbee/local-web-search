@@ -1,3 +1,4 @@
+import path from "node:path"
 import { launch, Page } from "puppeteer-core"
 import { findBrowser } from "./find-browser"
 import { domFetchAndEvaluate } from "./dom"
@@ -8,7 +9,7 @@ type RealBrowserOptions = {
   browser?: string
   proxy?: string
   executablePath?: string
-  userDataPath?: string
+  profilePath?: string
 }
 
 type FakeBrowserOptions = {
@@ -43,7 +44,7 @@ const launchRealBrowser = async (
     executablePath:
       options.executablePath || findBrowser(options.browser).executable,
     headless: !options.show,
-    userDataDir: options.userDataPath,
+    userDataDir: options.profilePath && path.dirname(options.profilePath),
     args: [
       // "--enable-webgl",
       // "--use-gl=swiftshader",
@@ -51,6 +52,9 @@ const launchRealBrowser = async (
       "--disable-blink-features=AutomationControlled",
       // "--disable-web-security",
       options.proxy ? `--proxy-server=${options.proxy}` : null,
+      options.profilePath
+        ? `--profile-directory=${path.basename(options.profilePath)}`
+        : null,
     ].filter((v) => v !== null),
     ignoreDefaultArgs: ["--enable-automation"],
     defaultViewport: {

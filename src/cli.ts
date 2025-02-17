@@ -27,7 +27,7 @@ type Options = {
   truncate?: number
   proxy?: string
   executablePath?: string
-  userDataPath?: string
+  profilePath?: string
 }
 
 async function main() {
@@ -57,6 +57,7 @@ async function main() {
     .option("--fake", "Use fake browser")
     .option("--truncate <num>", "Truncate page content")
     .option("--proxy <proxy>", "Use a proxy")
+    .option("--profile-path <path>", "The path to the browser profile")
     .action(async ({ fake, ..._options }: Options & { fake?: boolean }) => {
       const options: Options = {
         ...loadConfig(),
@@ -91,7 +92,7 @@ async function main() {
               browser: options.browser,
               proxy: options.proxy,
               executablePath: options.executablePath,
-              userDataPath: options.userDataPath,
+              profilePath: options.profilePath,
             },
       )
 
