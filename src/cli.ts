@@ -26,6 +26,8 @@ type Options = {
   /** keepp the first {number} of characters in each page */
   truncate?: number
   proxy?: string
+  executablePath?: string
+  userDataPath?: string
 }
 
 async function main() {
@@ -80,15 +82,16 @@ async function main() {
         options.maxResults &&
         Math.max(3, Math.floor(options.maxResults / queries.length))
 
-      const browserName = options.browser
       const browser = await launchBrowser(
         fake
           ? { type: "fake", proxy: options.proxy }
           : {
               type: "real",
               show: options.show,
-              browser: browserName,
+              browser: options.browser,
               proxy: options.proxy,
+              executablePath: options.executablePath,
+              userDataPath: options.userDataPath,
             },
       )
 

@@ -7,6 +7,8 @@ type RealBrowserOptions = {
   show?: boolean
   browser?: string
   proxy?: string
+  executablePath?: string
+  userDataPath?: string
 }
 
 type FakeBrowserOptions = {
@@ -37,11 +39,11 @@ export const launchBrowser = async (options: Options) => {
 const launchRealBrowser = async (
   options: RealBrowserOptions,
 ): Promise<BrowserMethods> => {
-  const browser = findBrowser(options.browser)
-
   const context = await launch({
-    executablePath: browser.executable,
+    executablePath:
+      options.executablePath || findBrowser(options.browser).executable,
     headless: !options.show,
+    userDataDir: options.userDataPath,
     args: [
       // "--enable-webgl",
       // "--use-gl=swiftshader",
