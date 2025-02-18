@@ -51,7 +51,7 @@ async function main() {
     .option("-q, --query <query>", "The search query")
     .option("-c, --concurrency <concurrency>", "concurrency")
     .option("--show", "Show browser")
-    .option("--max-results <num>", "Max search results")
+    .option("--max-results <num>", "Max search results per query")
     .option("--browser <browser>", "Choose a browser to use")
     .option("--exclude-domain <domain>", "Exclude domains from the result")
     .option("--fake", "Use fake browser")
@@ -78,10 +78,7 @@ async function main() {
           ? [options.excludeDomain]
           : []
 
-      // limit the max results for each query, minimal 3
-      const maxResults =
-        options.maxResults &&
-        Math.max(3, Math.floor(options.maxResults / queries.length))
+      const maxResults = options.maxResults
 
       const browser = await launchBrowser(
         fake
