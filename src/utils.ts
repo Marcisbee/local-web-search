@@ -28,3 +28,9 @@ export const shouldSkipDomain = (url: string) => {
 export const stripHTML = (html: string) => {
   return html.replace(/<[^>]*>?/g, "")
 }
+
+export const SELECTORS_TO_REMOVE: readonly string[] = [
+  "script,noscript,style,link,svg,img,video,iframe,canvas",
+  // wikipedia refs
+  ".reflist",
+]

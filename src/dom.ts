@@ -1,5 +1,7 @@
 import { Browser } from "happy-dom"
 import * as undici from "undici"
+import { load } from "cheerio"
+import { SELECTORS_TO_REMOVE } from "./utils"
 
 export async function domFetchAndEvaluate<T, TArg extends any[]>(
   url: string,
@@ -66,11 +68,14 @@ export async function domFetchAndEvaluate<T, TArg extends any[]>(
   })
 
   try {
+    const $ = load(html)
+    $(SELECTORS_TO_REMOVE.join(",")).remove()
+
     const page = browser.newPage()
 
     page.url = url
-    page.content = html
-
+    page.content = $.html()
+    console.log(page.content)
     await page.waitUntilComplete()
 
     const result = fn(page.mainFrame.window as any, ...fnArgs)

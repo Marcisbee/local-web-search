@@ -2,7 +2,7 @@ import { cac } from "cac"
 import Queue from "p-queue"
 import { toMarkdown } from "./to-markdown"
 import { WebSearchError } from "./error"
-import { shouldSkipDomain } from "./utils"
+import { SELECTORS_TO_REMOVE, shouldSkipDomain } from "./utils"
 import { loadConfig } from "./config"
 import { getReadabilityScript } from "./macro" with { type: "macro" }
 import { getSearchPageLinks } from "./extract"
@@ -242,18 +242,14 @@ async function visitLink(browser: BrowserMethods, url: string) {
   const readabilityScript = await getReadabilityScript()
   const result = await browser.evaluateOnPage(
     url,
-    (window, readabilityScript) => {
+    (window, readabilityScript, selectorsToRemove) => {
       const Readability = new Function(
         "module",
         `${readabilityScript}\nreturn module.exports`,
       )({})
 
       const document = window.document
-      const selectorsToRemove = [
-        "script,noscript,style,link,svg,img,video,iframe,canvas",
-        // wikipedia refs
-        ".reflist",
-      ]
+
       document
         .querySelectorAll(selectorsToRemove.join(","))
         .forEach((el) => el.remove())
@@ -265,7 +261,7 @@ async function visitLink(browser: BrowserMethods, url: string) {
 
       return { content, title: article?.title || title }
     },
-    [readabilityScript],
+    [readabilityScript, SELECTORS_TO_REMOVE] as const,
   )
 
   if (!result) return null
