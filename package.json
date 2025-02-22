@@ -8,7 +8,7 @@
   ],
   "bin": "cli.js",
   "scripts": {
-    "build": "rm -rf dist && bun build ./src/cli.ts --outdir=dist --target=node --external=puppeteer-core --external=happy-dom --external=undici",
+    "build": "rm -rf dist && bun build ./src/cli.ts --outdir=dist --target=node --external=playwright-core",
     "watch": "bun run build --watch",
     "prepublishOnly": "bun run build"
   },
@@ -25,11 +25,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "cheerio": "^1.0.0",
-    "happy-dom": "^17.0.2",
-    "puppeteer-core": "24.1.1",
-    "undici": "^7.3.0"
+    "playwright-core": "^1.50.1"
   },
-  "license": "MIT",
-  "packageManager": "pnpm@9.12.1+sha512.e5a7e52a4183a02d5931057f7a0dbff9d5e9ce3161e33fa68ae392125b79282a8a8a470a51dfc8a0ed86221442eb2fb57019b0990ed24fab519bf0e1bc5ccfc4"
+  "license": "MIT"
 }

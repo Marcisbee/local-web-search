@@ -3,7 +3,7 @@
 
 import type { SearchResult } from "./cli"
 
-export function getSearchPageLinks(window: Window) {
+export function getSearchPageLinks() {
   const links: SearchResult[] = []
   const document = window.document
 

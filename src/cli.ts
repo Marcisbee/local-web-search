@@ -54,11 +54,10 @@ async function main() {
     .option("--max-results <num>", "Max search results per query")
     .option("--browser <browser>", "Choose a browser to use")
     .option("--exclude-domain <domain>", "Exclude domains from the result")
-    .option("--fake", "Use fake browser")
     .option("--truncate <num>", "Truncate page content")
     .option("--proxy <proxy>", "Use a proxy")
     .option("--profile-path <path>", "The path to the browser profile")
-    .action(async ({ fake, ..._options }: Options & { fake?: boolean }) => {
+    .action(async ({ ..._options }: Options) => {
       const options: Options = {
         ...loadConfig(),
         ..._options,
@@ -80,18 +79,13 @@ async function main() {
 
       const maxResults = options.maxResults
 
-      const browser = await launchBrowser(
-        fake
-          ? { type: "fake", proxy: options.proxy }
-          : {
-              type: "real",
-              show: options.show,
-              browser: options.browser,
-              proxy: options.proxy,
-              executablePath: options.executablePath,
-              profilePath: options.profilePath,
-            },
-      )
+      const browser = await launchBrowser({
+        show: options.show,
+        browser: options.browser,
+        proxy: options.proxy,
+        executablePath: options.executablePath,
+        profilePath: options.profilePath,
+      })
 
       process.stdin.on("data", (data) => {
         handleStdin(data, browser)
@@ -195,7 +189,14 @@ async function search(
 ) {
   const url = getSearchUrl(options)
 
-  let links = await browser.evaluateOnPage(url, getSearchPageLinks, [])
+  let links = await browser.withPage(async (page) => {
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+    })
+    const result = await page.evaluate(getSearchPageLinks)
+
+    return result
+  })
 
   links =
     links?.filter((link) => {
@@ -240,29 +241,33 @@ async function search(
 
 async function visitLink(browser: BrowserMethods, url: string) {
   const readabilityScript = await getReadabilityScript()
-  const result = await browser.evaluateOnPage(
-    url,
-    (window, readabilityScript, selectorsToRemove) => {
-      const Readability = new Function(
-        "module",
-        `${readabilityScript}\nreturn module.exports`,
-      )({})
+  const result = await browser.withPage(async (page) => {
+    await page.goto(url, {
+      waitUntil: "domcontentloaded",
+    })
+    return await page.evaluate(
+      ([readabilityScript, selectorsToRemove]) => {
+        const Readability = new Function(
+          "module",
+          `${readabilityScript}\nreturn module.exports`,
+        )({})
 
-      const document = window.document
+        const document = window.document
 
-      document
-        .querySelectorAll(selectorsToRemove.join(","))
-        .forEach((el) => el.remove())
+        document
+          .querySelectorAll(selectorsToRemove.join(","))
+          .forEach((el) => el.remove())
 
-      const article = new Readability(document).parse()
+        const article = new Readability(document).parse()
 
-      const content = article?.content || ""
-      const title = document.title
+        const content = article?.content || ""
+        const title = document.title
 
-      return { content, title: article?.title || title }
-    },
-    [readabilityScript, SELECTORS_TO_REMOVE] as const,
-  )
+        return { content, title: article?.title || title }
+      },
+      [readabilityScript, SELECTORS_TO_REMOVE] as const,
+    )
+  })
 
   if (!result) return null
 

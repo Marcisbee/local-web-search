@@ -1,10 +1,10 @@
 import path from "node:path"
-import { launch, Page } from "puppeteer-core"
+import fs from "node:fs"
+import os from "node:os"
+import { chromium, type Page } from "playwright-core"
 import { findBrowser } from "./find-browser"
-import { domFetchAndEvaluate } from "./dom"
 
-type RealBrowserOptions = {
-  type: "real"
+type BrowserOptions = {
   show?: boolean
   browser?: string
   proxy?: string
@@ -12,58 +12,70 @@ type RealBrowserOptions = {
   profilePath?: string
 }
 
-type FakeBrowserOptions = {
-  type: "fake"
-  proxy?: string
-}
-
-type Options = RealBrowserOptions | FakeBrowserOptions
-
 export type BrowserMethods = {
   close: () => Promise<void>
 
-  evaluateOnPage: <T extends any[], R>(
-    url: string,
-    fn: (window: Window, ...args: T) => R,
-    fnArgs: T,
-  ) => Promise<R | null>
+  withPage: <T>(fn: (page: Page) => T | Promise<T>) => Promise<T>
 }
 
-export const launchBrowser = async (options: Options) => {
-  if (options.type === "real") {
-    return launchRealBrowser(options)
+export const launchBrowser = async (
+  options: BrowserOptions,
+): Promise<BrowserMethods> => {
+  const userDataDir = options.profilePath
+    ? path.dirname(options.profilePath)
+    : path.join(os.tmpdir(), "local-web-search-user-dir-temp")
+
+  if (!fs.existsSync(userDataDir)) {
+    const defaultPreferences = {
+      plugins: {
+        always_open_pdf_externally: true,
+      },
+    }
+
+    const defaultProfileDir = path.join(userDataDir, "Default")
+    fs.mkdirSync(defaultProfileDir, { recursive: true })
+
+    fs.writeFileSync(
+      path.join(defaultProfileDir, "Preferences"),
+      JSON.stringify(defaultPreferences),
+    )
   }
 
-  return launchFakeBrowser(options)
-}
-
-const launchRealBrowser = async (
-  options: RealBrowserOptions,
-): Promise<BrowserMethods> => {
-  const context = await launch({
+  const context = await chromium.launchPersistentContext(userDataDir, {
     executablePath:
       options.executablePath || findBrowser(options.browser).executable,
     headless: !options.show,
-    userDataDir: options.profilePath && path.dirname(options.profilePath),
     args: [
       // "--enable-webgl",
       // "--use-gl=swiftshader",
       // "--enable-accelerated-2d-canvas",
       "--disable-blink-features=AutomationControlled",
-      // "--disable-web-security",
-      options.proxy ? `--proxy-server=${options.proxy}` : null,
+      "--disable-web-security",
       options.profilePath
         ? `--profile-directory=${path.basename(options.profilePath)}`
         : null,
     ].filter((v) => v !== null),
     ignoreDefaultArgs: ["--enable-automation"],
-    defaultViewport: {
+    viewport: {
       width: 1280,
       height: 720,
     },
-    downloadBehavior: {
-      policy: "deny",
-    },
+    deviceScaleFactor: 1,
+    locale: "en-US",
+    acceptDownloads: false,
+    bypassCSP: true,
+    hasTouch: true,
+    userAgent: `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36`,
+    ignoreHTTPSErrors: true,
+    handleSIGHUP: true,
+    handleSIGINT: true,
+    handleSIGTERM: true,
+    chromiumSandbox: false,
+    proxy: options.proxy
+      ? {
+          server: options.proxy,
+        }
+      : undefined,
   })
 
   return {
@@ -71,17 +83,12 @@ const launchRealBrowser = async (
       context.close()
     },
 
-    evaluateOnPage: async (url, fn, fnArgs) => {
+    withPage: async (fn) => {
       const page = await context.newPage()
 
       try {
         await interceptRequest(page)
-        await page.goto(url, {
-          waitUntil: "networkidle2",
-        })
-        const win = await page.evaluateHandle(() => window)
-        const result = await page.evaluate(fn, win, ...fnArgs)
-        await win.dispose()
+        const result = await fn(page)
         await page.close()
         return result
       } catch (error) {
@@ -92,50 +99,20 @@ const launchRealBrowser = async (
   }
 }
 
-const launchFakeBrowser = async (
-  options: FakeBrowserOptions,
-): Promise<BrowserMethods> => {
-  return {
-    close: async () => {},
-
-    evaluateOnPage: async (url, fn, fnArgs) => {
-      const result = await domFetchAndEvaluate(
-        url,
-        (window, ...args) => fn(window as any, ...args),
-        fnArgs,
-        { proxy: options.proxy },
-      )
-
-      return result
-    },
-  }
-}
-
 async function interceptRequest(page: Page) {
   await applyStealthScripts(page)
-  await page.setRequestInterception(true)
 
-  page.on("request", (request) => {
-    const resourceType = request.resourceType()
-
-    if (resourceType !== "document") {
-      return request.abort()
+  await page.route("**/*", (route) => {
+    if (route.request().resourceType() !== "document") {
+      return route.abort()
     }
 
-    if (request.isNavigationRequest()) {
-      return request.continue()
-    }
-
-    return request.abort()
+    return route.continue()
   })
 }
 
 async function applyStealthScripts(page: Page) {
-  await page.setBypassCSP(true)
-  await page.setUserAgent(
-    `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/237.84.2.178 Safari/537.36`,
-  )
-  await page.evaluate(() => {
+  await page.addInitScript(() => {
     // Override the navigator.webdriver property
     Object.defineProperty(navigator, "webdriver", {
       get: () => undefined,
