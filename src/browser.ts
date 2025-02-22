@@ -80,7 +80,9 @@ export const launchBrowser = async (
 
   return {
     close: async () => {
-      context.close()
+      const pages = context.pages()
+      await Promise.all(pages.map((page) => page.close()))
+      await context.close()
     },
 
     withPage: async (fn) => {
