@@ -40,3 +40,41 @@ export function getSearchPageLinks() {
 
   return links
 }
+
+export function getSearXNGPageLinks() {
+  const links: SearchResult[] = []
+  const document = window.document
+
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url)
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
+  try {
+    const elements = document.querySelectorAll(".result")
+    elements.forEach((element) => {
+      const titleEl = element.querySelector("h3")
+      const urlEl = element.querySelector("a")
+      const url = urlEl?.getAttribute("href")
+
+      if (!url || !isValidUrl(url)) return
+
+      const item: SearchResult = {
+        title: titleEl?.textContent || "",
+        url,
+      }
+
+      if (!item.title || !item.url) return
+
+      links.push(item)
+    })
+  } catch (error) {
+    console.error(error)
+  }
+
+  return links
+}

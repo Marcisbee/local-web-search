@@ -5,7 +5,7 @@ import { toMarkdown } from "./to-markdown";
 import { SELECTORS_TO_REMOVE, shouldSkipDomain } from "./utils";
 import { loadConfig } from "./config";
 import { getReadabilityScript } from "./macro" with { type: "macro" };
-import { getSearchPageLinks } from "./extract";
+import { getSearchPageLinks, getSearXNGPageLinks } from "./extract";
 import { launchBrowser, type BrowserMethods } from "./browser";
 
 async function visitLink(browser: BrowserMethods, url: string) {
@@ -61,7 +61,8 @@ function getSearchUrl(options: {
   // web tab
   searchParams.set("udm", "14");
 
-  return `https://www.google.com/search?${searchParams.toString()}`;
+  // return `https://www.google.com/search?${searchParams.toString()}`;
+  return `https://priv.au/search?q=?${searchParams.toString()}`;
 }
 
 async function search(
@@ -82,7 +83,8 @@ async function search(
     await page.goto(searchUrl, {
       waitUntil: "domcontentloaded",
     });
-    const result = await page.evaluate(getSearchPageLinks);
+    // const result = await page.evaluate(getSearchPageLinks);
+    const result = await page.evaluate(getSearXNGPageLinks);
 
     return result;
   });
