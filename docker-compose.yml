@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  web:
+    image: oven/bun:latest
+    ports:
+      - "8001:8001"
+    volumes:
+      # Mount the project files
+      - type: bind
+        source: .
+        target: /app
+        read_only: true
+      # Mount browser locations for Windows
+      - type: bind
+        source: C:\Program Files\BraveSoftware
+        target: /Program Files/BraveSoftware
+        read_only: true
+      - type: bind 
+        source: C:\Program Files\Google
+        target: /Program Files/Google
+        read_only: true
+      - type: bind
+        source: C:\Program Files (x86)\Microsoft
+        target: /Program Files (x86)/Microsoft
+        read_only: true
+    working_dir: /app
+    command: bun run src/server.ts
+    environment:
+      - LOCALAPPDATA=/localappdata
